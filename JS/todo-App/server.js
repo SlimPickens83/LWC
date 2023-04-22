@@ -5,7 +5,7 @@ let app = express()
 let db
 
 async function go () {
-    let client = new MongoClient("mongodb+srv://mr1983:mercy246@cluster0.lxqplbq.mongodb.net/?retryWrites=true&w=majority")
+    let client = new MongoClient("mongodb+srv://mr1983:mercy246@cluster0.lxqplbq.mongodb.net/ToDo?retryWrites=true&w=majority")
     await client.connect()
     db = client.db()
     app.listen(3000)
@@ -15,7 +15,9 @@ go()
 
 app.use(express.urlencoded({extended: false}))
 
-app.get("/", function(req, res) {
+app.get("/", async function(req, res) {
+    const items = await db.collection("items").find().toArray()
+        console.log(items)
     res.send(`<!DOCTYPE html>
     <html>
     <head>
@@ -38,27 +40,15 @@ app.get("/", function(req, res) {
         </div>
         
         <ul class="list-group pb-5">
-          <li class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
-            <span class="item-text">Fake example item #1</span>
+          ${items.map(function(item) {
+            return `<li class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
+            <span class="item-text">${item.text}</span>
             <div>
               <button class="edit-me btn btn-secondary btn-sm mr-1">Edit</button>
               <button class="delete-me btn btn-danger btn-sm">Delete</button>
             </div>
-          </li>
-          <li class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
-            <span class="item-text">Fake example item #2</span>
-            <div>
-              <button class="edit-me btn btn-secondary btn-sm mr-1">Edit</button>
-              <button class="delete-me btn btn-danger btn-sm">Delete</button>
-            </div>
-          </li>
-          <li class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
-            <span class="item-text">Fake example item #3</span>
-            <div>
-              <button class="edit-me btn btn-secondary btn-sm mr-1">Edit</button>
-              <button class="delete-me btn btn-danger btn-sm">Delete</button>
-            </div>
-          </li>
+          </li>`
+          }).join("")}
         </ul>
         
       </div>
@@ -69,5 +59,5 @@ app.get("/", function(req, res) {
 
 app.post("/create-item", async function(req, res) {
     await db.collection("items").insertOne({text: req.body.item})
-    res.send("Thanks for submitting the form.")
+    res.redirect("/")
 })
