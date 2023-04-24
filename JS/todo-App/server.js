@@ -1,5 +1,6 @@
 let express = require("express")
 let {MongoClient, ObjectId} = require("mongodb")
+let sanitizeHTML = require("sanitize-html")
 
 let app = express()
 let db
@@ -17,6 +18,18 @@ go()
 
 app.use(express.json())
 app.use(express.urlencoded({extended: false}))
+
+function passwordProtected(req, res, next) {
+    res.set("WWW-Authenticate", "Basic realm='Simple Todo App'")
+    console.log(req.headers.authorization)
+    if (req.headers.authorization == "Basic YWJjOjEyMw==") {
+        next()
+    } else {
+        res.status(401).send("Authentication required.")
+    }
+}
+
+app.use(passwordProtected)
 
 app.get("/", async function(req, res) {
     const items = await db.collection("items").find().toArray()
@@ -60,12 +73,14 @@ app.get("/", async function(req, res) {
 })
 
 app.post("/create-item", async function(req, res) {
-    const info = await db.collection("items").insertOne({text: req.body.text})
-    res.json({_id: info.insertedId, text: req.body.text})
+    let safeText = sanitizeHTML(req.body.text, {allowedTags: [], allowedAttributes: {}})
+    const info = await db.collection("items").insertOne({text: safeText})
+    res.json({_id: info.insertedId, text: safeText})
 })
 
 app.post("/update-item", async function(req, res) {
-    await db.collection("items").findOneAndUpdate({_id: new ObjectId(req.body.id)}, {$set: {text: req.body.text}})
+    let safeText = sanitizeHTML(req.body.text, {allowedTags: [], allowedAttributes: {}})
+    await db.collection("items").findOneAndUpdate({_id: new ObjectId(req.body.id)}, {$set: {text: safeText}})
     res.send("Success")
 })
 
