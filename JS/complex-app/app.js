@@ -2,7 +2,10 @@ const express = require("express")
 const session = require("express-session")
 const MongoStore = require("connect-mongo")
 const flash = require("connect-flash")
+const markdown = require("marked")
+const sanitizeHTML = require("sanitize-html")
 const app = express()
+
 
 let sessionOptions = session({
     secret: "JavaScript is",
@@ -16,6 +19,11 @@ app.use(sessionOptions)
 app.use(flash())
 
 app.use(function(req, res, next) {
+    // Make markdown available to ejs templates
+    res.locals.filterUserHTML = function(content) {
+        return sanitizeHTML(markdown.parse(content), {allowedTags: ["p", "br", "ul", "li", "strong", "bold", "em", "h1", "h2"], allowedAttributes: {}})
+    }
+
     // Make all error and success flash messages available from all templates
     res.locals.errors = req.flash("errors")
     res.locals.success = req.flash("success")
