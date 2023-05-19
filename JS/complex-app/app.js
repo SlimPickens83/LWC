@@ -3,9 +3,14 @@ const session = require("express-session")
 const MongoStore = require("connect-mongo")
 const flash = require("connect-flash")
 const markdown = require("marked")
+// const csrf = require("csurf")
 const sanitizeHTML = require("sanitize-html")
 const app = express()
 
+app.use(express.urlencoded({extended: false}))
+app.use(express.json())
+
+app.use("/api", require("./router-api"))
 
 let sessionOptions = session({
     secret: "JavaScript is",
@@ -38,12 +43,18 @@ app.use(function(req, res, next) {
 
 const router = require("./router")
 
-app.use(express.urlencoded({extended: false}))
-app.use(express.json())
-
 app.use(express.static("public"))
 app.set("views", "views")
 app.set("view engine", "ejs")
+
+// This project lesson was published before the recent CSRF vulnerabilities were discovered.
+
+// app.use(csrf())
+
+// app.use(function(req, res, next) {
+//     res.locals.csrfToken = req.csrfToken()
+//     next
+// })
 
 app.use("/", router)
 
