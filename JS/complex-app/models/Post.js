@@ -31,22 +31,21 @@ Post.prototype.validate = function() {
     if (this.data.body == "") {this.errors.push("You must provide post content.")}
 }
 
-Post.prototype.create = function() {
-    return new Promise((resolve, reject) => {
-        this.cleanUp()
-        this.validate()
-        if (!this.errors.length) {
-            // Save post to database
-            postsCollection.insertOne(this.data).then((info) => {
-                resolve(info.insertedId)
-            }).catch(() => {
-                this.errors.push("Please try again later.")
-                reject(this.errors)
-            })
-        } else {
-            reject(this.errors)
+Post.prototype.create = async function() {
+    this.cleanUp()
+    this.validate()
+    if (!this.errors.length) {
+        // Save post to database
+        try {
+            const info = await postsCollection.insertOne(this.data)
+            return info.insertedId
+        } catch {
+            this.errors.push("Please try again later.")
+            throw this.errors
         }
-    })
+    } else {
+        throw this.errors
+    }
 }
 
 Post.prototype.update = function() {
